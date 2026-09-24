@@ -1,0 +1,363 @@
+@import "tailwindcss";
+
+/* =========================================
+   DOCUMIND - GLOBAL STYLES
+   ========================================= */
+
+@layer base {
+  :root {
+    --background: #090d16;
+    --foreground: #f8fafc;
+    --card: #0f172a;
+    --card-foreground: #f8fafc;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-foreground: #ffffff;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --border: #1e293b;
+    --ring: #6366f1;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+}
+
+/* =========================================
+   SCROLLBAR
+   ========================================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* =========================================
+   GLASS UI
+   ========================================= */
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow:
+    0 12px 32px -8px rgba(0, 0, 0, 0.5),
+    0 0 20px -2px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+}
+
+.glow-subtle {
+  box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.2);
+}
+
+/* =========================================
+   AI ANIMATION
+   ========================================= */
+
+@keyframes ai-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-ai-pulse {
+  animation: ai-pulse 3s infinite ease-in-out;
+}
+
+/* =========================================
+   GRADIENT TEXT
+   ========================================= */
+
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #cbd5e1 50%,
+    #94a3b8 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-primary-text {
+  background: linear-gradient(
+    135deg,
+    #a5b4fc 0%,
+    #818cf8 50%,
+    #6366f1 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================================
+   LIGHT THEME
+   ========================================= */
+
+html.light {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --ring: #6366f1;
+}
+
+/* Page background */
+
+html.light body {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light main,
+html.light .min-h-screen {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* =========================================
+   LIGHT THEME - LAYOUT
+   ========================================= */
+
+html.light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* =========================================
+   LIGHT THEME - BACKGROUNDS
+   ========================================= */
+
+html.light [class*="bg-slate-950"] {
+  background-color: #ffffff !important;
+}
+
+html.light [class*="bg-slate-900"] {
+  background-color: #f8fafc !important;
+}
+
+html.light [class*="bg-slate-800"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* =========================================
+   LIGHT THEME - CARDS
+   ========================================= */
+
+html.light .glass-panel,
+html.light .glass-card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.light .glass-card:hover {
+  border-color: #c7d2fe !important;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+/* =========================================
+   LIGHT THEME - TEXT
+   ========================================= */
+
+html.light .text-white,
+html.light .text-slate-50,
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* =========================================
+   LIGHT THEME - GRADIENT HEADINGS
+   ========================================= */
+
+html.light .gradient-text {
+  background: linear-gradient(
+    135deg,
+    #0f172a 0%,
+    #334155 50%,
+    #475569 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================================
+   LIGHT THEME - BORDERS
+   ========================================= */
+
+html.light [class*="border-slate-800"] {
+  border-color: #e2e8f0 !important;
+}
+
+html.light [class*="border-slate-700"] {
+  border-color: #cbd5e1 !important;
+}
+
+/* =========================================
+   LIGHT THEME - INPUTS
+   ========================================= */
+
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* =========================================
+   LIGHT THEME - HEADER BUTTONS
+   ========================================= */
+
+html.light header button {
+  box-shadow: none !important;
+}
+
+/* Demo Mode */
+
+html.light header [class*="bg-indigo"] {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Header Upload */
+
+html.light header button.bg-indigo-600 {
+  background-color: #475569 !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+html.light header button.bg-indigo-600:hover {
+  background-color: #334155 !important;
+}
+
+/* =========================================
+   LIGHT THEME - SIDEBAR UPLOAD
+   ========================================= */
+
+html.light aside button {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+html.light aside button:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* =========================================
+   LIGHT THEME - DASHBOARD UPLOAD
+   ========================================= */
+
+html.light main button.bg-indigo-600 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+html.light main button.bg-indigo-600:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* =========================================
+   LIGHT THEME - LINKS
+   ========================================= */
+
+html.light a {
+  text-decoration-color: #cbd5e1;
+}
+
+/* =========================================
+   LIGHT THEME - TABLES
+   ========================================= */
+
+html.light table {
+  background-color: #ffffff !important;
+}
+
+html.light th,
+html.light td {
+  border-color: #e2e8f0 !important;
+}
+
+/* =========================================
+   LIGHT THEME - DIVIDERS
+   ========================================= */
+
+html.light hr {
+  border-color: #e2e8f0 !important;
+}
