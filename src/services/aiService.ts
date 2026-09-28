@@ -35,6 +35,12 @@ Analyze the following document and create a useful summary.
 DOCUMENT:
 ${documentText}
 
+IMPORTANT:
+- Use only the information present in the DOCUMENT.
+- Do not invent facts.
+- Do not use outside knowledge.
+- Make the summary specific to this document.
+
 Return ONLY valid JSON in this exact format:
 
 {
@@ -71,9 +77,11 @@ Return ONLY valid JSON in this exact format:
 
       return {
         overview: parsed.overview,
-        keyPoints: parsed.keyPoints,
-        topics: parsed.topics,
-        suggestedQuestions: parsed.suggestedQuestions,
+        keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
+        topics: Array.isArray(parsed.topics) ? parsed.topics : [],
+        suggestedQuestions: Array.isArray(parsed.suggestedQuestions)
+          ? parsed.suggestedQuestions
+          : [],
         generatedAt: new Date().toISOString(),
       };
     } catch {
@@ -100,7 +108,7 @@ Tags: ${doc.tags.join(', ') || 'None'}`;
     const prompt = `
 You are DocuMind AI.
 
-Answer the user's question using the document content below.
+Answer the user's question using ONLY the document content provided below.
 
 DOCUMENT:
 ${documentText}
@@ -109,10 +117,13 @@ USER QUESTION:
 ${question}
 
 Rules:
-- Answer clearly and directly.
-- Use only information supported by the document.
-- If the document does not contain the answer, say that clearly.
-- Do not invent facts.
+- Answer only from the DOCUMENT content provided above.
+- Do not use outside knowledge.
+- Do not guess, assume, or invent information.
+- If the answer is not clearly supported by the DOCUMENT, say:
+"This information is not available in the document."
+- Keep the answer concise and directly answer the user's question.
+- When possible, mention the relevant information from the document.
 `;
 
     return await callGemini(prompt);

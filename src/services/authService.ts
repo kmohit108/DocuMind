@@ -1,4 +1,5 @@
 import { User } from '@/types';
+import { createClient } from '../lib/supabase/client';
 
 const AUTH_STORAGE_KEY = 'documind_auth_user';
 
@@ -6,97 +7,168 @@ const DEMO_USER: User = {
   id: 'usr-demo-001',
   name: 'Alex Developer',
   email: 'alex.developer@example.com',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  avatar:
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
   role: 'Senior Product Engineer',
   isDemo: true,
 };
 
+function mapSupabaseUser(supabaseUser: {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    name?: string;
+    avatar?: string;
+    role?: string;
+  };
+}): User {
+  return {
+    id: supabaseUser.id,
+    name:
+      supabaseUser.user_metadata?.name ||
+      supabaseUser.email?.split('@')[0] ||
+      'User',
+    email: supabaseUser.email || '',
+    avatar:
+      supabaseUser.user_metadata?.avatar ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: supabaseUser.user_metadata?.role || 'Member',
+    isDemo: false,
+  };
+}
+
 export const authService = {
-  /**
-   * Retrieves the current authenticated user from storage or demo session
-   */
   async getCurrentUser(): Promise<User | null> {
-    if (typeof window === 'undefined') return DEMO_USER;
-    try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.getUser();
+
+    if (!error && data.user) {
+      return mapSupabaseUser(data.user);
+    }
+
+    // Keep demo login working
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+
+        if (stored) {
+          const parsed = JSON.parse(stored);
+
+          if (parsed?.isDemo) {
+            return parsed;
+          }
+        }
+      } catch {
+        // Ignore invalid local storage
       }
-      // Default to demo user for seamless out-of-the-box exploration
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(DEMO_USER));
-      return DEMO_USER;
-    } catch {
-      return DEMO_USER;
     }
+
+    return null;
   },
 
-  /**
-   * Demo or production-ready login abstraction
-   */
-  async login(email: string, _password?: string): Promise<User> {
-    await new Promise((r) => setTimeout(r, 600)); // Simulate realistic network latency
-    const user: User = {
-      id: `usr-${Date.now()}`,
-      name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Demo User',
-      email: email,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      role: 'Member',
-      isDemo: true,
-    };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  async login(email: string, password?: string): Promise<User> {
+    if (!password) {
+      throw new Error('Password is required.');
     }
-    return user;
-  },
 
-  /**
-   * Demo signup
-   */
-  async signup(name: string, email: string, _password?: string): Promise<User> {
-    await new Promise((r) => setTimeout(r, 700));
-    const user: User = {
-      id: `usr-${Date.now()}`,
-      name,
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      role: 'Member',
-      isDemo: true,
-    };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
     }
-    return user;
+
+    if (!data.user) {
+      throw new Error('Unable to sign in.');
+    }
+
+    return mapSupabaseUser(data.user);
   },
 
-  /**
-   * One-click demo login
-   */
-  async loginDemo(): Promise<User> {
-    await new Promise((r) => setTimeout(r, 400));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(DEMO_USER));
+  async signup(
+    name: string,
+    email: string,
+    password?: string
+  ): Promise<User> {
+    if (!password) {
+      throw new Error('Password is required.');
     }
+
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          role: 'Member',
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data.user) {
+      throw new Error('Unable to create account.');
+    }
+
+    return mapSupabaseUser(data.user);
+  },
+
+  async loginDemo(): Promise<User> {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify(DEMO_USER)
+      );
+    }
+
     return DEMO_USER;
   },
 
-  /**
-   * Logs out user and clears local session
-   */
   async logout(): Promise<void> {
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
   },
 
-  /**
-   * Updates user profile
-   */
   async updateProfile(updates: Partial<User>): Promise<User> {
-    const current = (await this.getCurrentUser()) || DEMO_USER;
-    const updated: User = { ...current, ...updates };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        name: updates.name,
+        avatar: updates.avatar,
+        role: updates.role,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
     }
-    return updated;
+
+    if (!data.user) {
+      throw new Error('Unable to update profile.');
+    }
+
+    return mapSupabaseUser(data.user);
   },
 };
