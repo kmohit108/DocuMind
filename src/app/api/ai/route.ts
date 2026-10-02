@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { prompt } = await request.json();
+    const { prompt, temperature } = await request.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json(
@@ -41,9 +41,15 @@ export async function POST(request: Request) {
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-    });
+  model: 'gemini-3.6-flash',
+  contents: prompt,
+  config: {
+    temperature:
+      typeof temperature === 'number'
+        ? temperature
+        : 0.2,
+  },
+});
 
     if (!response.text) {
       return NextResponse.json(

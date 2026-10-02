@@ -5,36 +5,105 @@ const AUTH_STORAGE_KEY = 'documind_auth_user';
 
 const DEMO_USER: User = {
   id: 'usr-demo-001',
-  name: 'Alex Developer',
-  email: 'alex.developer@example.com',
+  name: 'Demo User',
+  email: 'demo@documind.ai',
   avatar:
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  role: 'Senior Product Engineer',
   isDemo: true,
 };
 
-function mapSupabaseUser(supabaseUser: {
+type SupabaseUser = {
   id: string;
   email?: string;
   user_metadata?: {
     name?: string;
     avatar?: string;
-    role?: string;
   };
-}): User {
+};
+
+type ProfileRow = {
+  user_id: string;
+  full_name?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  city?: string | null;
+  country?: string | null;
+  avatar_url?: string | null;
+};
+
+function mapUser(
+  supabaseUser: SupabaseUser,
+  profile?: ProfileRow | null
+): User {
   return {
     id: supabaseUser.id,
     name:
+      profile?.full_name ||
       supabaseUser.user_metadata?.name ||
       supabaseUser.email?.split('@')[0] ||
       'User',
     email: supabaseUser.email || '',
     avatar:
+      profile?.avatar_url ||
       supabaseUser.user_metadata?.avatar ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    role: supabaseUser.user_metadata?.role || 'Member',
+      undefined,
+    phone: profile?.phone || undefined,
+    dateOfBirth: profile?.date_of_birth || undefined,
+    city: profile?.city || undefined,
+    country: profile?.country || undefined,
     isDemo: false,
   };
+}
+
+async function getProfile(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<ProfileRow | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+async function ensureProfile(
+  supabase: ReturnType<typeof createClient>,
+  supabaseUser: SupabaseUser
+): Promise<ProfileRow> {
+  const existing = await getProfile(supabase, supabaseUser.id);
+
+  if (existing) {
+    return existing;
+  }
+
+  const profile = {
+    user_id: supabaseUser.id,
+    full_name:
+      supabaseUser.user_metadata?.name ||
+      supabaseUser.email?.split('@')[0] ||
+      'User',
+    avatar_url: supabaseUser.user_metadata?.avatar || null,
+  };
+
+  const { data, error } = await supabase
+  .from('profiles')
+  .upsert(profile, {
+    onConflict: 'user_id',
+  })
+  .select()
+  .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 export const authService = {
@@ -44,10 +113,11 @@ export const authService = {
     const { data, error } = await supabase.auth.getUser();
 
     if (!error && data.user) {
-      return mapSupabaseUser(data.user);
+      const profile = await ensureProfile(supabase, data.user);
+
+      return mapUser(data.user, profile);
     }
 
-    // Keep demo login working
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -74,10 +144,11 @@ export const authService = {
 
     const supabase = createClient();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (error) {
       throw new Error(error.message);
@@ -87,7 +158,9 @@ export const authService = {
       throw new Error('Unable to sign in.');
     }
 
-    return mapSupabaseUser(data.user);
+    const profile = await ensureProfile(supabase, data.user);
+
+    return mapUser(data.user, profile);
   },
 
   async signup(
@@ -107,7 +180,6 @@ export const authService = {
       options: {
         data: {
           name,
-          role: 'Member',
         },
       },
     });
@@ -120,7 +192,9 @@ export const authService = {
       throw new Error('Unable to create account.');
     }
 
-    return mapSupabaseUser(data.user);
+    const profile = await ensureProfile(supabase, data.user);
+
+    return mapUser(data.user, profile);
   },
 
   async loginDemo(): Promise<User> {
@@ -150,25 +224,60 @@ export const authService = {
     }
   },
 
-  async updateProfile(updates: Partial<User>): Promise<User> {
+  async updateProfile(
+    updates: Partial<User>
+  ): Promise<User> {
     const supabase = createClient();
 
-    const { data, error } = await supabase.auth.updateUser({
-      data: {
-        name: updates.name,
-        avatar: updates.avatar,
-        role: updates.role,
-      },
-    });
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (error) {
-      throw new Error(error.message);
+    if (userError || !user) {
+      throw new Error('You must be logged in.');
     }
 
-    if (!data.user) {
+    const profileUpdates = {
+      user_id: user.id,
+      full_name: updates.name?.trim() || null,
+      phone: updates.phone?.trim() || null,
+      date_of_birth: updates.dateOfBirth || null,
+      city: updates.city?.trim() || null,
+      country: updates.country?.trim() || null,
+      avatar_url: updates.avatar || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: profile, error: profileError } =
+      await supabase
+        .from('profiles')
+        .upsert(profileUpdates, {
+          onConflict: 'user_id',
+        })
+        .select()
+        .single();
+
+    if (profileError) {
+      throw new Error(profileError.message);
+    }
+
+    const { data: authData, error: authError } =
+      await supabase.auth.updateUser({
+        data: {
+          name: updates.name,
+          avatar: updates.avatar,
+        },
+      });
+
+    if (authError) {
+      throw new Error(authError.message);
+    }
+
+    if (!authData.user) {
       throw new Error('Unable to update profile.');
     }
 
-    return mapSupabaseUser(data.user);
+    return mapUser(authData.user, profile);
   },
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 import {
   Send,
@@ -243,7 +244,50 @@ export function AskAIChat({ document: doc, initialQuestion }: AskAIChatProps) {
                       : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 font-medium'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
+                  <div className="font-sans prose prose-invert prose-sm max-w-none">
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => (
+        <p className="mb-2 last:mb-0">{children}</p>
+      ),
+      strong: ({ children }) => (
+        <strong className="font-bold text-white">
+          {children}
+        </strong>
+      ),
+      ul: ({ children }) => (
+        <ul className="list-disc pl-5 space-y-1 mb-2">
+          {children}
+        </ul>
+      ),
+      ol: ({ children }) => (
+        <ol className="list-decimal pl-5 space-y-1 mb-2">
+          {children}
+        </ol>
+      ),
+      li: ({ children }) => (
+        <li className="text-slate-200">{children}</li>
+      ),
+      h1: ({ children }) => (
+        <h1 className="text-base font-bold text-white mb-2">
+          {children}
+        </h1>
+      ),
+      h2: ({ children }) => (
+        <h2 className="text-sm font-bold text-white mb-2">
+          {children}
+        </h2>
+      ),
+      h3: ({ children }) => (
+        <h3 className="text-sm font-bold text-white mb-1">
+          {children}
+        </h3>
+      ),
+    }}
+  >
+    {msg.content}
+  </ReactMarkdown>
+</div>
 
                   {/* Message Timestamp */}
                   <div
