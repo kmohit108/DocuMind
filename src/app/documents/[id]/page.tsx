@@ -47,12 +47,15 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
   const [document, setDocument] = useState<DocumentItem | null>(null);
 
   useEffect(() => {
-    if (documents.length > 0) {
-      const found = documents.find((d) => d.id === resolvedParams.id);
-      setDocument(found || null);
-    }
-  }, [documents, resolvedParams.id]);
+  const found = documents.find((d) => d.id === resolvedParams.id);
 
+  if (!found && !isLoading) {
+    router.replace('/documents');
+    return;
+  }
+
+  setDocument(found || null);
+}, [documents, resolvedParams.id, isLoading, router]);
   if (isLoading) {
     return (
       <AppShell>

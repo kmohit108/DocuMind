@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -9,6 +10,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Gemini API key is not configured.' },
         { status: 500 }
+      );
+    }
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required.' },
+        { status: 401 }
       );
     }
 
@@ -45,8 +60,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error:
-          'Unable to generate an AI response. Please try again.',
+        error: 'Unable to generate an AI response. Please try again.',
       },
       { status: 500 }
     );
