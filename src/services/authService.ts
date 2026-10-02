@@ -92,12 +92,12 @@ async function ensureProfile(
   };
 
   const { data, error } = await supabase
-  .from('profiles')
-  .upsert(profile, {
-    onConflict: 'user_id',
-  })
-  .select()
-  .single();
+    .from('profiles')
+    .upsert(profile, {
+      onConflict: 'user_id',
+    })
+    .select()
+    .single();
 
   if (error) {
     throw new Error(error.message);
@@ -192,9 +192,17 @@ export const authService = {
       throw new Error('Unable to create account.');
     }
 
-    const profile = await ensureProfile(supabase, data.user);
+    // Create the profile only when an authenticated session exists.
+    // If email confirmation is enabled, the session is null until
+    // the user confirms their email.
+    if (data.session) {
+      const profile = await ensureProfile(supabase, data.user);
 
-    return mapUser(data.user, profile);
+      return mapUser(data.user, profile);
+    }
+
+    // Email confirmation is required.
+    return mapUser(data.user, null);
   },
 
   async loginDemo(): Promise<User> {

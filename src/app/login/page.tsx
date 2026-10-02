@@ -77,40 +77,54 @@ function LoginPageContent() {
     setIsSubmitting(true);
 
     try {
-      if (isSignUp) {
-        await signup(name.trim(), email.trim(), password);
+  if (isSignUp) {
+    await signup(name.trim(), email.trim(), password);
 
-        success(
-          'Account Created',
-          'Your account has been created successfully.'
-        );
+    const supabase = createClient();
 
-        router.push('/dashboard');
-      } else {
-        await login(email.trim(), password);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-        success(
-          'Welcome Back',
-          'Signed in successfully.'
-        );
-
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong. Please try again.';
-
-      error(
-        isSignUp ? 'Signup Failed' : 'Login Failed',
-        message
+    if (session) {
+      success(
+        'Account Created',
+        'Your account has been created successfully.'
       );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
+      router.push('/dashboard');
+    } else {
+      success(
+        'Account Created',
+        'Please check your email and confirm your account before signing in.'
+      );
+
+      router.push('/login');
+    }
+  } else {
+    await login(email.trim(), password);
+
+    success(
+      'Welcome Back',
+      'Signed in successfully.'
+    );
+
+    router.push('/dashboard');
+  }
+} catch (err) {
+  const message =
+    err instanceof Error
+      ? err.message
+      : 'Something went wrong. Please try again.';
+
+  error(
+    isSignUp ? 'Signup Failed' : 'Login Failed',
+    message
+  );
+} finally {
+  setIsSubmitting(false);
+}
+  };
   const handleGoogleLogin = async () => {
     setIsSubmitting(true);
 
