@@ -6,6 +6,7 @@ import { documentService } from '@/services/documentService';
 import { aiService } from '@/services/aiService';
 import { storageService } from '@/services/storageService';
 import { useToast } from './ToastContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface DocumentContextType {
   documents: DocumentItem[];
@@ -62,20 +63,34 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const { success, error, info } = useToast();
 
   const loadData = useCallback(async () => {
-    try {
-      const [docs, acts] = await Promise.all([
-        documentService.getDocuments(),
-        documentService.getActivities(),
-      ]);
-      setDocuments(docs);
-      setActivities(acts);
-    } catch (err) {
-      console.error('Failed to load document data:', err);
-      error('Failed to load documents', 'Please refresh the page.');
-    } finally {
-      setIsLoading(false);
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // User logged out hai to documents fetch mat karo
+    if (!user) {
+      setDocuments([]);
+      setActivities([]);
+      return;
     }
-  }, [error]);
+
+    const [docs, acts] = await Promise.all([
+      documentService.getDocuments(),
+      documentService.getActivities(),
+    ]);
+
+    setDocuments(docs);
+    setActivities(acts);
+  } catch (err) {
+    console.error('Failed to load document data:', err);
+    error('Failed to load documents', 'Please refresh the page.');
+  } finally {
+    setIsLoading(false);
+  }
+}, [error]);
 
   useEffect(() => {
     loadData();
